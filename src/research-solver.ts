@@ -1,3 +1,5 @@
+import aspects_data from "./aspects.json";
+
 type ResearchSolution = { path: string[] | null, weight: number };
 
 class ResearchSolver {
@@ -17,9 +19,9 @@ class ResearchSolver {
         this.MAX_SEARCH_DEPTH = 10;
     }
 
-    public static async create(): Promise<ResearchSolver> {
+    public static create(): ResearchSolver{
         const solver = new ResearchSolver();
-        await solver.initialize();
+        solver.initialize();
         return solver;
     }
 
@@ -62,13 +64,8 @@ class ResearchSolver {
         return { path: best_path, weight: min_weight };
     }
 
-    private async initialize(): Promise<void> {
-        let response = await fetch('/aspects.json');
-        if (!response.ok) {
-            throw new Error('Failed to fetch aspects data');
-        }
-
-        this.aspects_data = await response.json() as Record<string, any>;
+    private initialize(): void {
+        this.aspects_data = aspects_data;
         this.initializeAspects();
         this.createValidConnections();
         this.findAspectWeight();

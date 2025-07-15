@@ -1,13 +1,15 @@
 import { ResearchSolver, type ResearchSolution } from "./research-solver";
+import aspects_data from "./aspects.json";
+import translations_data from "./translations.json";
 
 const $ = (q: string, p: Element = document.body) => p.querySelector(q);
 const $$ = (q: string, p: Element = document.body) => p.querySelectorAll(q);
 
-const solver = await ResearchSolver.create();
-const translations = await fetchTranslations();
-const aspects = await fetchAspects();
+const solver = ResearchSolver.create();
+const translations = fetchTranslations();
+const aspects = fetchAspects();
 
-addAspectButtons(aspects);
+addAspectButtons();
 
 const nodeList = $("#node-list");
 const solutionList = $("#solution-list");
@@ -85,7 +87,7 @@ function addResearchNode(aspect: string) {
   nodeList.appendChild(node);
 }
 
-function addAspectButtons(aspects: string[]) {
+function addAspectButtons() {
   const container = $("#aspect-buttons");
   if (!container) return;
 
@@ -114,17 +116,14 @@ function createAspectElement(aspect: string): HTMLSpanElement {
   span.className = "aspect";
   span.dataset.aspect = aspect;
   const img = document.createElement("img");
-  img.src = `/aspects/${aspect}.png`;
+  img.src = getAspectImageUrl(aspect);
   img.title = translations[aspect] || aspect;
   span.appendChild(img);
   return span;
 }
 
-async function fetchTranslations(): Promise<Record<string, string>> {
-  const response = await fetch("/translations.json");
-  if (!response.ok) throw new Error("Failed to fetch translations");
-  const translationsOfAspects = await response.json() as Record<string, string | string[]>;
-
+function fetchTranslations(): Record<string, string> {
+  const translationsOfAspects = translations_data as unknown as Record<string, string | string[]>;
   for (const aspect in translationsOfAspects) {
     let translations = translationsOfAspects[aspect] as string[];
     if (Array.isArray(translations)) {
@@ -137,13 +136,15 @@ async function fetchTranslations(): Promise<Record<string, string>> {
   return translationsOfAspects as Record<string, string>;
 }
 
-async function fetchAspects(): Promise<string[]> {
-  const response = await fetch("/aspects.json");
-  if (!response.ok) throw new Error("Failed to fetch aspects");
+function fetchAspects(): string[] {
   type AspectsData = { primal: string[]; compound: string[] };
-  const aspects = await response.json() as AspectsData;
+  const aspects = aspects_data as AspectsData;
   if (Array.isArray(aspects.primal) && Array.isArray(aspects.compound)) {
     return [...aspects.primal, ...aspects.compound];
   }
   throw new Error("Invalid aspects data format");
+}
+
+function getAspectImageUrl(aspect: string): string {
+  return `${import.meta.env.BASE_URL}aspects/${aspect}.png`;
 }
