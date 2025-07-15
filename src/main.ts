@@ -22,7 +22,7 @@ function generateSolutionNodes(solution: ResearchSolution) {
 
   const p = document.createElement("p");
 
-  if (solution.path == null || solution.path.length === 0) {
+  if (!solution.path || solution.path.length === 0) {
     p.textContent = "No solution found";
     solutionList.appendChild(p);
     return;
@@ -30,11 +30,12 @@ function generateSolutionNodes(solution: ResearchSolution) {
 
   const span = document.createElement("span");
   span.className = "solution-path";
-  solution.path.forEach((aspect, idx) => {
+  const path = solution.path;
+  path.forEach((aspect, idx) => {
     const aspectElement = createAspectElement(aspect);
     aspectElement.className = "solution-aspect";
     span.appendChild(aspectElement);
-    if (idx < solution.path.length - 1) {
+    if (idx < path.length - 1) {
       span.append(" → ");
     }
   });
