@@ -34,7 +34,7 @@ class ResearchSolver {
         }
 
         const dfs = (current: string, current_weight: number, target: string, path: string[]): void => {
-            if (path.length > this.MAX_SEARCH_DEPTH) {
+            if (path.length > this.MAX_SEARCH_DEPTH || path.length > distance) {
                 return;
             }
 
