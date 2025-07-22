@@ -47,15 +47,21 @@ function generateSolutionNodes(solution: ResearchSolution) {
   solutionList.appendChild(p);
 }
 
+let previousPath: string[] = [];
 function findSolutionsOfResearch() {
   if (!solutionList) return;
   solutionList.innerHTML = "";
 
   const path = getResearchPath();
   if (path.length <= 1) return;
+  
+  let i = 0;
+  for (i = 0; i < path.length; i++) {
 
-  let lastAspect = path[0];
-  for (let i = 1; i < path.length; i++) {
+  }
+  
+  let lastAspect = path[i];
+  for (i = i + 1; i < path.length; i++) {
     let j = i;
     while (path[i] === "hex") i++;
     if (i >= path.length) break;
@@ -148,3 +154,9 @@ function fetchAspects(): string[] {
 function getAspectImageUrl(aspect: string): string {
   return `${import.meta.env.BASE_URL}aspects/${aspect}.png`;
 }
+
+// TODO: find new aspects images
+// TODO: add a way to save and compare research paths to reduce computation time
+// TODO: add reset button
+// TODO: better ui design
+// TODO: scroll to delete / add aspects
