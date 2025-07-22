@@ -64,7 +64,13 @@
         "desidia",
         "invidia",
         "telum",
-        "ira"
+        "ira",
+        "aequalitas",
+        "gloria",
+        "primordium",
+        "astrum",
+        "vesania",
+        "terminus"
     ],
     "combinations": {
         "permutatio": [
@@ -294,6 +300,30 @@
         "ira": [
             "telum",
             "ignis"
+        ],
+        "aequalitas": [
+            "cognitio",
+            "ordo"
+        ],
+        "gloria": [
+            "humanus",
+            "iter"
+        ],
+        "primordium": [
+            "vacuos",
+            "motus"
+        ],
+        "astrum": [
+            "lux",
+            "primordium"
+        ],
+        "vesania": [
+            "coginitio",
+            "vitium"
+        ],
+        "terminus": [
+            "lucrum",
+            "alienis"
         ]
     }
 }
