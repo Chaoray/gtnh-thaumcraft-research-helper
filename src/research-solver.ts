@@ -1,6 +1,7 @@
 import aspects_data from "./aspects.json";
 
 type ResearchSolution = { path: string[] | null, weight: number };
+type ResearchProblem = { start: string, end: string, distance: number };
 
 class ResearchSolver {
     private aspects_data: Record<string, any>;
@@ -25,9 +26,11 @@ class ResearchSolver {
         return solver;
     }
 
-    public findSolution(start: string, end: string, distance: number): ResearchSolution {
+    public findSolution(problem: ResearchProblem): ResearchSolution {
         let min_weight = Infinity;
         let best_path: string[] | null = null;
+
+        const { start, end, distance } = problem;
 
         if (!this.isValidAspect(start) || !this.isValidAspect(end)) {
             throw new Error('Invalid aspect provided');
@@ -132,3 +135,4 @@ class ResearchSolver {
 
 export { ResearchSolver };
 export type { ResearchSolution };
+export type { ResearchProblem };

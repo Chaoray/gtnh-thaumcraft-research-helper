@@ -1,4 +1,4 @@
-import { ResearchSolver, type ResearchSolution } from "./research-solver";
+import { ResearchSolver, type ResearchSolution, type ResearchProblem } from "./research-solver";
 import aspects_data from "./aspects.json";
 import translations_data from "./translations.json";
 
@@ -19,58 +19,68 @@ if (nodeList) {
   observer.observe(nodeList, { childList: true });
 }
 
-function generateSolutionNodes(solution: ResearchSolution) {
-  if (!solutionList) return;
+$("#reset")?.addEventListener("click", () => {
+  if (!nodeList || !solutionList) return;
+  nodeList.innerHTML = "";
+  solutionList.innerHTML = "";
+});
 
-  const p = document.createElement("p");
-
-  if (!solution.path || solution.path.length === 0) {
-    p.textContent = "No solution found";
-    solutionList.appendChild(p);
-    return;
-  }
-
-  const span = document.createElement("span");
-  span.className = "solution-path";
-  const path = solution.path;
-  path.forEach((aspect, idx) => {
-    const aspectElement = createAspectElement(aspect);
-    aspectElement.className = "solution-aspect";
-    span.appendChild(aspectElement);
-    if (idx < path.length - 1) {
-      span.append(" → ");
-    }
-  });
-
-  p.appendChild(span);
-  p.append(` (${solution.weight})`);
-  solutionList.appendChild(p);
-}
-
-let previousPath: string[] = [];
-function findSolutionsOfResearch() {
+function generateSolutionNodes(solutions: ResearchSolution[]) {
   if (!solutionList) return;
   solutionList.innerHTML = "";
 
+  for (const solution of solutions) {
+    const p = document.createElement("p");
+
+    if (!solution.path || solution.path.length === 0) {
+      p.textContent = "No solution found";
+      solutionList.appendChild(p);
+      continue;
+    }
+
+    const span = document.createElement("span");
+    span.className = "solution-path";
+    const path = solution.path;
+    path.forEach((aspect, idx) => {
+      const aspectElement = createAspectElement(aspect);
+      aspectElement.className = "solution-aspect";
+      span.appendChild(aspectElement);
+      if (idx < path.length - 1) {
+        span.append(" → ");
+      }
+    });
+
+    p.appendChild(span);
+    p.append(` (${solution.weight})`);
+    solutionList.appendChild(p);
+  }
+}
+
+function findSolutionsOfResearch() {
+  if (!solutionList) return;
+
   const path = getResearchPath();
   if (path.length <= 1) return;
-  
-  let i = 0;
-  for (i = 0; i < path.length; i++) {
 
-  }
-  
-  let lastAspect = path[i];
-  for (i = i + 1; i < path.length; i++) {
+  let lastAspect = path[0];
+  let problems: ResearchProblem[] = [];
+  for (let i = 1; i < path.length; i++) {
     let j = i;
     while (path[i] === "hex") i++;
     if (i >= path.length) break;
     const distance = i - j + 2;
     const currentAspect = path[i];
-    const solution = solver.findSolution(lastAspect, currentAspect, distance);
-    generateSolutionNodes(solution);
+    problems.push({ start: lastAspect, end: currentAspect, distance });
     lastAspect = currentAspect;
   }
+
+  let solutions: ResearchSolution[] = [];
+  for (const problem of problems) {
+    const solution = solver.findSolution(problem);
+    solutions.push(solution);
+  }
+
+  generateSolutionNodes(solutions);
 }
 
 function getResearchPath(): string[] {
