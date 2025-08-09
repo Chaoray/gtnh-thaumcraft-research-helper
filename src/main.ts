@@ -99,7 +99,10 @@ function addResearchNode(aspect: string) {
   if (!nodeList) return;
   const node = createAspectElement(aspect);
   node.className = "node";
-  node.onclick = () => node.remove();
+  node.onclick = () => {
+    node.remove();
+    findSolutionsOfResearch();
+  };
   nodeList.appendChild(node);
 }
 
@@ -107,23 +110,65 @@ function addAspectButtons() {
   const container = $("#aspect-buttons");
   if (!container) return;
 
-  container.appendChild(createAspectButton("hex", "Empty Hex", () => addResearchNode("hex")));
+  container.appendChild(createAspectButton("hex", () => addResearchNode("hex")));
 
   for (const aspect of aspects) {
     container.appendChild(
-      createAspectButton(aspect, translations[aspect] || aspect, () => addResearchNode(aspect))
+      createAspectButton(aspect, () => addResearchNode(aspect))
     );
   }
 }
 
-function createAspectButton(aspect: string, title: string, onClick: () => void): HTMLButtonElement {
+function createAspectButton(aspect: string, onClick: () => void): HTMLButtonElement {
   const button = document.createElement("button");
   button.className = "aspect-button";
   button.id = aspect;
-  button.title = title;
   const element = createAspectElement(aspect);
   button.appendChild(element);
+
   button.onclick = onClick;
+
+  const showTooltip = () => {
+    let tooltip = $("#tooltip") as HTMLDivElement | null;
+    if (!tooltip) return;
+    tooltip.style.display = "block";
+
+    let tooltipAspectName = $("#tooltip > #aspect-name") as HTMLSpanElement | null;
+    if (!tooltipAspectName) return;
+    tooltipAspectName.textContent = capitalizeFirstLetter(aspect);
+
+    let tooltipTranslations = $("#tooltip > #translations") as HTMLSpanElement | null;
+    if (!tooltipTranslations) return;
+    tooltipTranslations.textContent = translations[aspect] || aspect;
+
+    let tooltipRecipe = $("#tooltip > #recipe") as HTMLSpanElement | null;
+    if (!tooltipRecipe) return;
+    tooltipRecipe.innerHTML = "";
+    const recipeElements = getAspectRecipeElements(aspect);
+    recipeElements.forEach(element => tooltipRecipe.appendChild(element));
+  };
+
+  const updateTooltipPosition = (e: MouseEvent) => {
+    let tooltip = $("#tooltip") as HTMLDivElement | null;
+    if (!tooltip) return;
+
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    tooltip.style.left = `${e.clientX + scrollLeft}px`;
+    tooltip.style.top = `${e.clientY + scrollTop}px`;
+  };
+
+  const hideTooltip = () => {
+    let tooltip = $("#tooltip") as HTMLDivElement | null;
+    if (!tooltip) return;
+    tooltip.style.display = "none";
+  };
+
+  button.addEventListener('mouseenter', showTooltip);
+  button.addEventListener('mousemove', updateTooltipPosition);
+  button.addEventListener('mouseleave', hideTooltip);
+
   return button;
 }
 
@@ -131,11 +176,26 @@ function createAspectElement(aspect: string): HTMLSpanElement {
   const span = document.createElement("span");
   span.className = "aspect";
   span.dataset.aspect = aspect;
+
   const img = document.createElement("img");
   img.src = getAspectImageUrl(aspect);
-  img.title = translations[aspect] || aspect;
+
   span.appendChild(img);
+
   return span;
+}
+
+function getAspectRecipeElements(aspect: string) {
+  const combination = aspects_data["combinations"] as unknown as Record<string, string[]>;
+  const recipeElements: HTMLElement[] = [];
+
+  if (combination[aspect]) {
+    for (const material of combination[aspect]) {
+      recipeElements.push(createAspectElement(material));
+    }
+  }
+
+  return recipeElements;
 }
 
 function fetchTranslations(): Record<string, string> {
@@ -165,8 +225,9 @@ function getAspectImageUrl(aspect: string): string {
   return `${import.meta.env.BASE_URL}aspects/${aspect}.png`;
 }
 
-// TODO: find new aspects images
-// TODO: add a way to save and compare research paths to reduce computation time
-// TODO: add reset button
+function capitalizeFirstLetter(string: string): string {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 // TODO: better ui design
 // TODO: scroll to delete / add aspects
