@@ -9,7 +9,6 @@ class ResearchSolver {
     private primal: string[];
     private compound: string[];
     private weights: Record<string, number>;
-    private MAX_SEARCH_DEPTH: number;
 
     constructor() {
         this.aspects_data = {};
@@ -17,7 +16,6 @@ class ResearchSolver {
         this.primal = [];
         this.compound = [];
         this.weights = {};
-        this.MAX_SEARCH_DEPTH = 10;
     }
 
     public static create(): ResearchSolver{
@@ -37,7 +35,7 @@ class ResearchSolver {
         }
 
         const dfs = (current: string, current_weight: number, target: string, path: string[]): void => {
-            if (path.length > this.MAX_SEARCH_DEPTH || path.length > distance) {
+            if (path.length > distance) {
                 return;
             }
 
@@ -63,7 +61,7 @@ class ResearchSolver {
             }
         };
 
-        dfs(start, 0, end, [start]);
+        dfs(start, this.weights[start], end, [start]);
         return { path: best_path, weight: min_weight };
     }
 
