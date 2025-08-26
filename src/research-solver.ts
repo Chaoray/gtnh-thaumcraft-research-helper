@@ -1,21 +1,23 @@
-import aspects_data from "./aspects.json";
+import aspectsData from "./aspects.json";
 
 type ResearchSolution = { path: string[] | null, weight: number };
 type ResearchProblem = { start: string, end: string, distance: number };
 
 class ResearchSolver {
-    private aspects_data: Record<string, any>;
+    private aspectsData: Record<string, any>;
     private connections: Record<string, string[]>;
     private primal: string[];
     private compound: string[];
     private weights: Record<string, number>;
+    public preferredAspects: Set<string>;
 
     constructor() {
-        this.aspects_data = {};
+        this.aspectsData = {};
         this.connections = {};
         this.primal = [];
         this.compound = [];
         this.weights = {};
+        this.preferredAspects = new Set<string>();
     }
 
     public static create(): ResearchSolver{
@@ -47,13 +49,13 @@ class ResearchSolver {
                 return;
             }
 
-            let reachable_aspects: string[] | undefined = this.connections[current];
-            if (!reachable_aspects) {
+            let reachableAspects: string[] | undefined = this.connections[current];
+            if (!reachableAspects) {
                 return
             }
 
-            for (let next of reachable_aspects) {
-                let new_weight: number = current_weight + (this.weights[next] || 0);
+            for (let next of reachableAspects) {
+                let new_weight: number = current_weight + (this.getWeight(next) || 0);
                 if (new_weight >= min_weight) {
                     continue
                 }
@@ -61,20 +63,27 @@ class ResearchSolver {
             }
         };
 
-        dfs(start, this.weights[start], end, [start]);
+        dfs(start, this.getWeight(start), end, [start]);
         return { path: best_path, weight: min_weight };
     }
 
+    private getWeight(aspect: string): number {
+        if (this.preferredAspects.has(aspect)) {
+            return 0;
+        }
+        return this.weights[aspect];
+    }
+
     private initialize(): void {
-        this.aspects_data = aspects_data;
+        this.aspectsData = aspectsData;
         this.initializeAspects();
         this.createValidConnections();
         this.findAspectWeight();
     }
 
     private initializeAspects(): void {
-        this.primal = this.aspects_data.primal;
-        this.compound = this.aspects_data.compound;
+        this.primal = this.aspectsData.primal;
+        this.compound = this.aspectsData.compound;
         for (const aspect of [...this.primal, ...this.compound]) {
             this.connections[aspect] = [];
         }
@@ -94,7 +103,7 @@ class ResearchSolver {
             }
 
             let aspect_weight = 0;
-            let composition: string[] = this.aspects_data.combinations[current] || [];
+            let composition: string[] = this.aspectsData.combinations[current] || [];
 
             visited.add(current);
             for (let next of composition) {
@@ -112,8 +121,8 @@ class ResearchSolver {
     }
 
     private createValidConnections(): void {
-        for (let key in this.aspects_data.combinations) {
-            for (let value of this.aspects_data.combinations[key]) {
+        for (let key in this.aspectsData.combinations) {
+            for (let value of this.aspectsData.combinations[key]) {
                 if (!this.connections[key]) {
                     this.connections[key] = [];
                 }

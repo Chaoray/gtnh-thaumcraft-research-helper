@@ -1,0 +1,54 @@
+body {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  overflow-y: scroll;
+}
+
+#app {
+  width: 38.2%;
+}
+
+.preferred-aspect {
+    border: 2px solid gold;
+}
+
+/* Drag and drop styles */
+.aspect-button {
+  cursor: grab;
+}
+
+.aspect-button:active {
+  cursor: grabbing;
+}
+
+#node-list {
+  min-height: 50px;
+  padding: 10px;
+  border: 2px dashed transparent;
+  border-radius: 5px;
+  transition: border-color 0.2s ease;
+}
+
+#node-list.drag-over {
+  border-color: #007acc;
+  background-color: rgba(0, 122, 204, 0.1);
+}
+
+.node {
+  display: inline-block;
+  margin: 2px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.node:hover {
+  transform: scale(1.1);
+}
+
+#tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  display: none;
+}

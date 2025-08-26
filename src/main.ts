@@ -1,6 +1,6 @@
 import { ResearchSolver, type ResearchSolution, type ResearchProblem } from "./research-solver";
-import aspects_data from "./aspects.json";
-import translations_data from "./translations.json";
+import aspectsData from "./aspects.json";
+import translationsData from "./translations.json";
 
 const $ = (q: string, p: Element = document.body) => p.querySelector(q);
 const $$ = (q: string, p: Element = document.body) => p.querySelectorAll(q);
@@ -8,22 +8,28 @@ const $$ = (q: string, p: Element = document.body) => p.querySelectorAll(q);
 const solver = ResearchSolver.create();
 const translations = fetchTranslations();
 const aspects = fetchAspects();
-
-addAspectButtons();
+const preferredAspects = new Set<string>();
 
 const nodeList = $("#node-list");
 const solutionList = $("#solution-list");
 
-if (nodeList) {
-  const observer = new MutationObserver(findSolutionsOfResearch);
-  observer.observe(nodeList, { childList: true });
-}
+(function main() {
+  addAspectButtons();
 
-$("#reset")?.addEventListener("click", () => {
-  if (!nodeList || !solutionList) return;
-  nodeList.innerHTML = "";
-  solutionList.innerHTML = "";
-});
+  if (nodeList) {
+    const observer = new MutationObserver(findSolutionsOfResearch);
+    observer.observe(nodeList, { childList: true });
+    
+    // Set up drag and drop for the node list
+    setupDropZone();
+  }
+
+  $("#reset")?.addEventListener("click", () => {
+    if (!nodeList || !solutionList) return;
+    nodeList.innerHTML = "";
+    solutionList.innerHTML = "";
+  });
+})();
 
 function generateSolutionNodes(solutions: ResearchSolution[]) {
   if (!solutionList) return;
@@ -106,27 +112,72 @@ function addResearchNode(aspect: string) {
   nodeList.appendChild(node);
 }
 
+function setupDropZone() {
+  if (!nodeList) return;
+
+  nodeList.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const dragEvent = e as DragEvent;
+    dragEvent.dataTransfer!.dropEffect = 'copy';
+    nodeList.classList.add('drag-over');
+  });
+
+  nodeList.addEventListener('dragleave', (e) => {
+    // Only remove the class if we're leaving the nodeList itself, not a child
+    const dragEvent = e as DragEvent;
+    if (!nodeList.contains(dragEvent.relatedTarget as Node)) {
+      nodeList.classList.remove('drag-over');
+    }
+  });
+
+  nodeList.addEventListener('drop', (e) => {
+    e.preventDefault();
+    nodeList.classList.remove('drag-over');
+    
+    const dragEvent = e as DragEvent;
+    const aspect = dragEvent.dataTransfer?.getData('text/plain');
+    if (aspect) {
+      const target = e.target as Element;
+      const nodeElement = target.closest('.node') as HTMLElement;
+      
+      if (nodeElement && nodeList.contains(nodeElement)) {
+        insertResearchNodeBefore(aspect, nodeElement);
+      } else {
+        addResearchNode(aspect);
+      }
+    }
+  });
+}
+
+function insertResearchNodeBefore(aspect: string, targetNode: HTMLElement) {
+  if (!nodeList) return;
+  const node = createAspectElement(aspect);
+  node.className = "node";
+  node.onclick = () => {
+    node.remove();
+    findSolutionsOfResearch();
+  };
+  nodeList.insertBefore(node, targetNode);
+}
+
 function addAspectButtons() {
   const container = $("#aspect-buttons");
   if (!container) return;
 
-  container.appendChild(createAspectButton("hex", () => addResearchNode("hex")));
-
-  for (const aspect of aspects) {
+  for (const aspect of ["hex", ...aspects]) {
     container.appendChild(
-      createAspectButton(aspect, () => addResearchNode(aspect))
+      createAspectButton(aspect)
     );
   }
 }
 
-function createAspectButton(aspect: string, onClick: () => void): HTMLButtonElement {
+function createAspectButton(aspect: string): HTMLButtonElement {
   const button = document.createElement("button");
   button.className = "aspect-button";
   button.id = aspect;
+  button.draggable = true;
   const element = createAspectElement(aspect);
   button.appendChild(element);
-
-  button.onclick = onClick;
 
   const showTooltip = () => {
     let tooltip = $("#tooltip") as HTMLDivElement | null;
@@ -154,7 +205,7 @@ function createAspectButton(aspect: string, onClick: () => void): HTMLButtonElem
 
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
+
     tooltip.style.left = `${e.clientX + scrollLeft}px`;
     tooltip.style.top = `${e.clientY + scrollTop}px`;
   };
@@ -165,9 +216,33 @@ function createAspectButton(aspect: string, onClick: () => void): HTMLButtonElem
     tooltip.style.display = "none";
   };
 
-  button.addEventListener('mouseenter', showTooltip);
-  button.addEventListener('mousemove', updateTooltipPosition);
-  button.addEventListener('mouseleave', hideTooltip);
+  const togglePreferredAspect = (ev: PointerEvent) => {
+    ev.preventDefault();
+
+    if (preferredAspects.has(aspect)) {
+      preferredAspects.delete(aspect);
+      button.classList.remove("preferred-aspect");
+    } else {
+      preferredAspects.add(aspect);
+      button.classList.add("preferred-aspect");
+    }
+
+    solver.preferredAspects = preferredAspects;
+  };
+
+  button.addEventListener('dragstart', (e) => {
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('text/plain', aspect);
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+    hideTooltip();
+  });
+
+  button.onmouseenter = showTooltip;
+  button.onmousemove = updateTooltipPosition;
+  button.onmouseleave = hideTooltip;
+  button.onclick = () => addResearchNode(aspect);
+  button.oncontextmenu = togglePreferredAspect;
 
   return button;
 }
@@ -186,7 +261,7 @@ function createAspectElement(aspect: string): HTMLSpanElement {
 }
 
 function getAspectRecipeElements(aspect: string) {
-  const combination = aspects_data["combinations"] as unknown as Record<string, string[]>;
+  const combination = aspectsData["combinations"] as unknown as Record<string, string[]>;
   const recipeElements: HTMLElement[] = [];
 
   if (combination[aspect]) {
@@ -199,22 +274,20 @@ function getAspectRecipeElements(aspect: string) {
 }
 
 function fetchTranslations(): Record<string, string> {
-  const translationsOfAspects = translations_data as unknown as Record<string, string | string[]>;
+  const translationsOfAspects = translationsData as unknown as Record<string, string | string[]>;
   for (const aspect in translationsOfAspects) {
     let translations = translationsOfAspects[aspect] as string[];
-    if (Array.isArray(translations)) {
-      translations = translations.map(str =>
-        str.split(" ").map(word => word[0].toUpperCase() + word.slice(1).toLowerCase()).join(" ")
-      );
-      translationsOfAspects[aspect] = translations.join(", ");
-    }
+    translations = translations.map(str =>
+      str.split(" ").map(word => word[0].toUpperCase() + word.slice(1).toLowerCase()).join(" ")
+    );
+    translationsOfAspects[aspect] = translations.join(", ");
   }
   return translationsOfAspects as Record<string, string>;
 }
 
 function fetchAspects(): string[] {
   type AspectsData = { primal: string[]; compound: string[] };
-  const aspects = aspects_data as AspectsData;
+  const aspects = aspectsData as AspectsData;
   if (Array.isArray(aspects.primal) && Array.isArray(aspects.compound)) {
     return [...aspects.primal, ...aspects.compound];
   }
@@ -228,6 +301,3 @@ function getAspectImageUrl(aspect: string): string {
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
-
-// TODO: better ui design
-// TODO: scroll to delete / add aspects
