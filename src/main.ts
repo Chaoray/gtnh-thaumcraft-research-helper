@@ -216,7 +216,7 @@ function createAspectButton(aspect: string): HTMLButtonElement {
     tooltip.style.display = "none";
   };
 
-  const togglePreferredAspect = (ev: PointerEvent) => {
+  const togglePreferredAspect = (ev: MouseEvent) => {
     ev.preventDefault();
 
     if (preferredAspects.has(aspect)) {
