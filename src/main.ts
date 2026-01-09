@@ -20,7 +20,6 @@ const solutionList = $("#solution-list");
     const observer = new MutationObserver(findSolutionsOfResearch);
     observer.observe(nodeList, { childList: true });
     
-    // Set up drag and drop for the node list
     setupDropZone();
   }
 
@@ -72,7 +71,7 @@ function findSolutionsOfResearch() {
   let problems: ResearchProblem[] = [];
   for (let i = 1; i < path.length; i++) {
     let j = i;
-    while (path[i] === "hex") i++;
+    while (i < path.length && path[i] === "hex") i++;
     if (i >= path.length) break;
     const distance = i - j + 2;
     const currentAspect = path[i];
